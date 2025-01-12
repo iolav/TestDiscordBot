@@ -22,12 +22,17 @@ class Datastore:
         with open(self.filename, "w") as file:
             json.dump(self.data, file, indent=4)
 
-    def change(self, guild, user, key, value, op):
-        self.data.setdefault(guild, {})
-        self.data[guild].setdefault(user, {})
-        self.data[guild][user].setdefault(key, 0)
+    def fetch(self, user : int, key : str):
+        current = None
+        try:
+            current = self.data[user][key]
+        finally:
+            return current
 
-        current : int = self.data[guild][user][key]
-        self.data[guild][user][key] = opFuncs[op](current, value)
+    def change(self, user: int, key: str, value, op: str):
+        self.data.setdefault(user, {}).setdefault(key, 0)
+
+        current: int = self.data[user][key]
+        self.data[user][key] = opFuncs[op](current, value)
 
         self.save()

@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
-from typing import Final
+from typing import Final, Optional
 from datastore import Datastore
 
 load_dotenv()
@@ -20,13 +20,25 @@ async def on_ready():
     datastore = Datastore("savedata.json")
 
 @client.command()
-async def bal(ctx, user):
+async def bal(ctx, user : Optional[discord.Member] = None):
+    user = user or ctx.author
+    balance : int = datastore.fetch(user.id, "coins") or 0
+
     embed = discord.Embed(title=f"{user}'s Balance",
-                      description="<a:goldcoin:1328125082861572228> 500")
+                      description=f"<a:goldcoin:1328125082861572228> **{balance}** coins")
     await ctx.reply(embed=embed)
 
 @client.command()
-async def addtest(ctx):
-    datastore.change(ctx.guild.id, ctx.author.id, "coins", 100, "+")
+async def add(ctx, amount : int = 0, user : Optional[discord.Member] = None):
+    user = user or ctx.author
+
+    if any(role.permissions.administrator for role in ctx.author.roles):
+        await ctx.reply(f"Lacking required permissions, operation failed")
+
+        return
+
+    datastore.change(user.id, "coins", amount, "+")
+
+    await ctx.reply(f"Successfully addded <a:goldcoin:1328125082861572228> **{amount}** coins to user {user}")
 
 client.run(TOKEN)
