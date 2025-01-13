@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from typing import Final, Optional
 from datastore import Datastore
+import asyncio
+import random
 
 load_dotenv()
 
@@ -34,7 +36,8 @@ async def bal(ctx, user : Optional[discord.Member] = None):
 
     embed = discord.Embed(
         title = f"{user}'s Balance",
-        description = f"{emojis["wallet"]} Wallet: {emojis["coin"]} **{wallet}**\n\n{emojis["bank"]} Bank: {emojis["coin"]} **{bank}**"
+        description = f"{emojis["wallet"]} Wallet: {emojis["coin"]} **{wallet}**\n\n{emojis["bank"]} Bank: {emojis["coin"]} **{bank}**",
+        colour=0xf5d400
     )
 
     await ctx.reply(embed=embed)
@@ -51,5 +54,29 @@ async def add(ctx, amount : int = 0, user : Optional[discord.Member] = None):
     datastore.change(str(user.id), "coins_wallet", amount, "+")
 
     await ctx.reply(f"Successfully addded {emojis["coin"]} **{amount}** to **{user}**'s wallet")
+
+@client.command()
+async def dice(ctx, amount : int = 0):
+    if amount == 0:
+        await ctx.reply(f"You have to bet at least {emojis["coin"]} 1!")
+
+        return
+    
+    startEmbed = discord.Embed(
+        title=f"{ctx.author}'s Dice roll",
+        description="🎲ㅤ**Rolling...**ㅤ🎲",
+        colour=0x00b0f4
+    )
+    endEmbed = discord.Embed(  
+        title=f"{ctx.author}'s Dice roll",
+        description=f"🎲ㅤ**{random.randint(1, 6)}**ㅤ🎲", #Add win/loose and change color of embed and do coins stuff
+        colour=0x00b0f4
+    )
+    
+    message = await ctx.reply(embed=startEmbed)
+
+    await asyncio.sleep(3)
+
+    await message.edit(embed=endEmbed)
 
 client.run(TOKEN)
