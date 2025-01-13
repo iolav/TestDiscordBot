@@ -5,7 +5,11 @@ opFuncs : dict = {
     "+": lambda x, y: x + y,
     "-": lambda x, y: x - y,
     "*": lambda x, y: x * y,
+    "=": lambda _, y: y,
 }
+
+def getDefault(type_):
+    return type_()
 
 class Datastore:
     def __init__(self, filename):
@@ -23,14 +27,15 @@ class Datastore:
             json.dump(self.data, file, indent=4)
 
     def fetch(self, user : int, key : str):
-        current = None
         try:
             current = self.data[user][key]
-        finally:
-            return current
+        except:
+            current = None
 
-    def change(self, user: int, key: str, value, op: str):
-        self.data.setdefault(user, {}).setdefault(key, 0)
+        return current
+
+    def change(self, user: str, key: str, value, op: str):
+        self.data.setdefault(user, {}).setdefault(key, getDefault(type(value)))
 
         current: int = self.data[user][key]
         self.data[user][key] = opFuncs[op](current, value)
