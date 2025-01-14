@@ -2,23 +2,23 @@ import os
 import json
 from typing import Final
 
-DEFAULT_USER_DATA : Final[dict] = {
+DEFAULT_USER_DATA : Final[dict] = { #Default values for new users
     "coins_wallet": 250,
     "coins_bank": 1000,
 }
 
-opFuncs : Final[dict] = {
+opFuncs : Final[dict] = { #Thank you python for blessing me with lambda functions
     "+": lambda x, y: x + y,
     "-": lambda x, y: x - y,
     "*": lambda x, y: x * y,
     "=": lambda _, y: y,
 }
 
-def getDefault(type_):
+def getDefault(type_): #For getting defualt values (DRY)
     return type_()
 
 class Datastore:
-    def __init__(self, filename):
+    def __init__(self, filename): #Setting up the "database" json file
         self.filename = filename
         
         if not os.path.exists(self.filename):
@@ -28,16 +28,16 @@ class Datastore:
         with open(self.filename, "r") as file:
             self.data = json.load(file)
 
-    def save(self):
+    def save(self): #Saving data
         with open(self.filename, "w") as file:
             json.dump(self.data, file, indent=4)
 
-    def steralize_user(self, user : str):
+    def steralize_user(self, user : str): #If its a new user, give them the default values (Again, DRY)
         if user not in self.data:
             self.data[user] = DEFAULT_USER_DATA.copy()
             self.save()
 
-    def fetch(self, user : int, key : str):
+    def fetch(self, user : int, key : str): #Fetching data
         self.steralize_user(user)
 
         try:
@@ -47,10 +47,10 @@ class Datastore:
 
         return current
 
-    def change(self, user: str, key: str, value, op: str):
+    def change(self, user: str, key: str, value, op: str): #Modifying data
         self.steralize_user(user)
 
-        self.data.setdefault(user, {}).setdefault(key, getDefault(type(value)))
+        self.data.setdefault(user, {}).setdefault(key, getDefault(type(value))) #What
 
         current: int = self.data[user][key]
         self.data[user][key] = opFuncs[op](current, value)
