@@ -28,7 +28,6 @@ async def on_ready(): #Initalizing the "database" when the bot/client is ready
     datastore = Datastore("savedata.json")
 
 ## CHECKS ##
-# REMEMBER: DO CHECKS
 
 ## COMMANDS ##
 
@@ -50,21 +49,18 @@ async def bal(ctx, user : Optional[discord.Member] = None):
     await ctx.reply(embed=embed)
 
 @client.command(
-    help="Admin only - adds a coin amount to a user"
+    help="Owner only - adds a coin amount to a user"
 )
+@commands.is_owner()
 async def add(ctx, user : Optional[discord.Member] = None, amount = 0):
     user = user or ctx.author
-
-    if any(role.permissions.administrator for role in ctx.author.roles): #Checks roles for admin permission
-        await ctx.reply(f"Lacking required permissions, operation failed") #Fail response
-        return
 
     datastore.change(str(user.id), "coins_wallet", amount, "+") # Adds amount to user's wallet balance
 
     await ctx.reply(f"Successfully addded {emojis["coin"]} **{amount}** to **{user}**'s wallet") #Sucess response
 
 @client.command(
-    help="Bet any amount on a dice number, if it rolls on that number, you win 6x your bet."
+    help="Bet any amount on a dice roll, 1-6 odds, win 6x your bet."
 )
 async def dice(ctx, bet : int, guess : int):
     wallet : int = datastore.fetch(str(ctx.author.id), "coins_wallet") or 0 #Getting and checking the users wallet balance
@@ -96,7 +92,7 @@ async def dice(ctx, bet : int, guess : int):
 
     await message.edit(embed=endEmbed)
 
-## ERRORS ## REMEBER: https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html#error-handling
+## ERRORS ##
 
 @dice.error
 async def diceError(ctx, error): # Error handling for dice command
@@ -104,5 +100,12 @@ async def diceError(ctx, error): # Error handling for dice command
         await ctx.reply("Incorrect usage, use $help for assistance.")
     elif isinstance(error, commands.CheckFailure):
         await ctx.reply("Your bet is bigger than your wallet balance!")
+
+@add.error
+async def addError(ctx, error): # Error handling for add command
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.reply("Incorrect usage, use $help for assistance.")
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.reply("Lacking required permissions, only the owner can use this command.")
 
 client.run(TOKEN) #Finally, running the bot/client

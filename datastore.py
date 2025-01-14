@@ -14,9 +14,6 @@ opFuncs : Final[dict] = { #Thank you python for blessing me with lambda function
     "=": lambda _, y: y,
 }
 
-def getDefault(type_): #For getting defualt values (DRY)
-    return type_()
-
 class Datastore:
     def __init__(self, filename): #Setting up the "database" json file
         self.filename = filename
@@ -50,7 +47,7 @@ class Datastore:
     def change(self, user: str, key: str, value, op: str): #Modifying data
         self.steralize_user(user)
 
-        self.data.setdefault(user, {}).setdefault(key, getDefault(type(value))) #What
+        self.data.setdefault(user, {}).setdefault(key, type(value)()) #What
 
         current: int = self.data[user][key]
         self.data[user][key] = opFuncs[op](current, value)
