@@ -27,10 +27,13 @@ async def on_ready(): #Initalizing the "database" when the bot/client is ready
     global datastore
     datastore = Datastore("savedata.json")
 
+## CHECKS ##
+# REMEMBER: DO CHECKS
+
 ## COMMANDS ##
 
 @client.command(
-        help="Displays your or another user's wallet and bank balance."
+    help="Displays your or another user's wallet and bank balance."
 )
 async def bal(ctx, user : Optional[discord.Member] = None):
     user = user or ctx.author
@@ -49,8 +52,8 @@ async def bal(ctx, user : Optional[discord.Member] = None):
 @client.command(
     help="Admin only - adds a coin amount to a user"
 )
-async def add(ctx, amount = 0, user : Optional[discord.Member] = None):
-    user = user or ctx.author #Passed user or just use msg author
+async def add(ctx, user : Optional[discord.Member] = None, amount = 0):
+    user = user or ctx.author
 
     if any(role.permissions.administrator for role in ctx.author.roles): #Checks roles for admin permission
         await ctx.reply(f"Lacking required permissions, operation failed") #Fail response
@@ -63,23 +66,10 @@ async def add(ctx, amount = 0, user : Optional[discord.Member] = None):
 @client.command(
     help="Bet any amount on a dice number, if it rolls on that number, you win 6x your bet."
 )
-async def dice(ctx, bet : Optional[int] = None, guess : Optional[int] = None):
-    #Ensuring everything is passed correctly
-    if not bet or not guess:
-        await ctx.reply("Incorrect usage! Use $help for assistance.")
-        return
-
-    if not bet or bet <= 0:
-        await ctx.reply(f"You have to bet at least {emojis["coin"]} **1**!")
-        return
-    if not guess or guess < 1 or guess > 6:
-        await ctx.reply("Your guess must be between 1 and 6!")
-        return
-    
+async def dice(ctx, bet : int, guess : int):
     wallet : int = datastore.fetch(str(ctx.author.id), "coins_wallet") or 0 #Getting and checking the users wallet balance
     if wallet < bet:
-        await ctx.reply("Your bet is bigger than your wallet balance!")
-        return
+        raise commands.CheckFailure
 
     roll : int = random.randint(1, 6) # Psuedorandom :(
     won : bool = roll == guess
@@ -89,12 +79,12 @@ async def dice(ctx, bet : Optional[int] = None, guess : Optional[int] = None):
     else:
         datastore.change(str(ctx.author.id), "coins_wallet", bet, "-")
     
-    startEmbed = discord.Embed( #Embeddddds
+    startEmbed = discord.Embed( #Wait embed
         title=f"{ctx.author}'s Dice roll",
         description=":game_die:ㅤ**Rolling...**ㅤ:game_die:",
         colour=0x00b0f4
     )
-    endEmbed = discord.Embed(  
+    endEmbed = discord.Embed( #Win/lose embed  
         title=f"{ctx.author}'s Dice roll",
         description=f":game_die:ㅤ**{roll}**ㅤ:game_die:\n\n{'You win!' if won else 'You lose!'}",
         colour=0x38ff4f if won else 0xff3838
@@ -105,5 +95,14 @@ async def dice(ctx, bet : Optional[int] = None, guess : Optional[int] = None):
     await asyncio.sleep(3) #Wait for dramatic effect
 
     await message.edit(embed=endEmbed)
+
+## ERRORS ## REMEBER: https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html#error-handling
+
+@dice.error
+async def diceError(ctx, error): # Error handling for dice command
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.reply("Incorrect usage, use $help for assistance.")
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.reply("Your bet is bigger than your wallet balance!")
 
 client.run(TOKEN) #Finally, running the bot/client
