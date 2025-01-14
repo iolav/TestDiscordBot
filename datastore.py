@@ -1,7 +1,13 @@
 import os
 import json
+from typing import Final
 
-opFuncs : dict = {
+DEFAULT_USER_DATA : Final[dict] = {
+    "coins_wallet": 250,
+    "coins_bank": 1000,
+}
+
+opFuncs : Final[dict] = {
     "+": lambda x, y: x + y,
     "-": lambda x, y: x - y,
     "*": lambda x, y: x * y,
@@ -26,7 +32,14 @@ class Datastore:
         with open(self.filename, "w") as file:
             json.dump(self.data, file, indent=4)
 
+    def steralize_user(self, user : str):
+        if user not in self.data:
+            self.data[user] = DEFAULT_USER_DATA.copy()
+            self.save()
+
     def fetch(self, user : int, key : str):
+        self.steralize_user(user)
+
         try:
             current = self.data[user][key]
         except:
@@ -35,6 +48,8 @@ class Datastore:
         return current
 
     def change(self, user: str, key: str, value, op: str):
+        self.steralize_user(user)
+
         self.data.setdefault(user, {}).setdefault(key, getDefault(type(value)))
 
         current: int = self.data[user][key]
