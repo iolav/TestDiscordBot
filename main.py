@@ -138,17 +138,39 @@ class Gambling(commands.Cog):
         roll : int = random.randint(0, 36)
         
         payout : int = 0
+        colorEmoji : str
         if (option == "evens" or option == "black") and roll % 2 == 0:
             payout = 2
+            colorEmoji = "black_large_square"
         elif (option == "odds" or option == "red") and roll % 3 == 0:
             payout = 2
+            colorEmoji = "red_square"
+        if (roll == 0):
+            payout = 0
+            colorEmoji = "green_square"
 
         if payout > 0:
             datastore.change(str(ctx.author.id), "coins_wallet", bet * payout, "+")
         else:
             datastore.change(str(ctx.author.id), "coins_wallet", bet, "-")
+
+        startEmbed = discord.Embed(
+            title=f"{ctx.author}'s Roulette spin",
+            description=":dart:ㅤ**Rolling...**ㅤ:dart:",
+            colour=0x00b0f4
+        )
+
+        endEmbed = discord.Embed(
+            title=f"{ctx.author}'s Roulette spin",
+            description=f":{colorEmoji}:ㅤ**{roll}**ㅤ:{colorEmoji}:\n\n{'You win!' if payout > 0 else 'You lose!'}",
+            colour=0x38ff4f if payout > 0 else 0xff3838
+        )
         
-        await ctx.reply(payout > 0)
+        message = await ctx.reply(embed=startEmbed)
+
+        await asyncio.sleep(3)
+
+        await message.edit(embed=endEmbed)
 
 @commands.is_owner()
 class OwnerOnly(commands.Cog):
