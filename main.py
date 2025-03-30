@@ -142,7 +142,7 @@ class Gambling(commands.Cog):
         if (option == "evens" or option == "black") and roll % 2 == 0:
             payout = 2
             colorEmoji = "black_large_square"
-        elif (option == "odds" or option == "red") and roll % 3 == 0:
+        elif (option == "odds" or option == "red") and roll % 2 == 1:
             payout = 2
             colorEmoji = "red_square"
         if (roll == 0):
