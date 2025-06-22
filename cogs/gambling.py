@@ -61,7 +61,7 @@ class Gambling(commands.Cog):
         roll : int = random.randint(0, 36)
         
         payout : int = 0
-        colorEmoji : str
+        colorEmoji : str = ""
 
         if roll == 0:
             colorEmoji = "green_square"

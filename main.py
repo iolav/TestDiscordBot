@@ -10,7 +10,7 @@ from datastore import Datastore
 
 from cogs.economy import Economy
 from cogs.gambling import Gambling
-from cogs.owneronly import OwnerOnly
+from cogs.admin import Admin
 
 load_dotenv()
 
@@ -40,7 +40,7 @@ async def on_ready():
 
     await client.add_cog(Economy(datastore, emojis))
     await client.add_cog(Gambling(datastore, emojis))
-    await client.add_cog(OwnerOnly(datastore, emojis))
+    await client.add_cog(Admin(datastore, emojis))
 
 @Gambling.dice.error
 async def diceError(self, ctx, error):
@@ -59,11 +59,28 @@ async def rouletteError(self, ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.reply("No roulette valid option found.")
 
-@OwnerOnly.add.error
+@Economy.withdraw.error
+async def rouletteError(self, ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.reply("Your requested withdraw amount is greater than your bank balance!")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.reply("The withdraw amount must be greater than 0, use $help for assistance.")
+@Economy.deposit.error
+async def rouletteError(self, ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.reply("Your requested deposit amount is greater than your wallet balance!")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.reply("The deposit amount must be greater than 0, use $help for assistance.")
+@Economy.claim.error
+async def rouletteError(self, ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.reply("You've already claimed your bonus in the last 24 hours!")
+
+@Admin.add.error
 async def addError(self, ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.reply("Incorrect usage, use $help for assistance.")
     elif isinstance(error, commands.CheckFailure):
-        await ctx.reply("Lacking required permissions, only the owner can use this command.")
+        await ctx.reply("Lacking required permissions to use this command.")
 
 client.run(TOKEN)

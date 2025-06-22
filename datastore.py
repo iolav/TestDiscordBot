@@ -38,19 +38,15 @@ class Datastore:
         self.steralize_user(user)
 
         try:
-            current = self.data[user][key]
+            return self.data[user][key]
         except:
-            current = None
-
-        return current
+            return None
     
     def fetchAll(self):
         try:
-            current = self.data
+            return self.data
         except:
-            current = None
-
-        return current
+            return None
 
     def change(self, user: str, key: str, value, op: str):
         self.steralize_user(user)

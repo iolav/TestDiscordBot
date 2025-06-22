@@ -4,7 +4,7 @@ from discord.ext import commands
 from typing import Optional
 
 @commands.is_owner()
-class OwnerOnly(commands.Cog):
+class Admin(commands.Cog):
     def __init__(self, datastore, emojis):
         self.datastore = datastore
         self.emojis = emojis
