@@ -34,7 +34,8 @@ async def on_ready():
     emojis : Final[dict[str]] = {
         "coin" : "<a:goldcoin:1328517822497685535>",
         "wallet" : "<:wallet:1328163268522410095>",
-        "bank" : "<:bank2:1328163595434987551>"
+        "bank" : "<:bank2:1328163595434987551>",
+        "wheel" : "<a:roulettewheel:1386230490872152136>"
     }
 
     await client.add_cog(Economy(datastore, emojis))

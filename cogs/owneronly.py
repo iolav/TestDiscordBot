@@ -10,18 +10,10 @@ class OwnerOnly(commands.Cog):
         self.emojis = emojis
 
     @commands.command(
-        help="Adds a coin amount to a user",
-        hidden=True
+        help = "Adds a coin amount to a user",
+        hidden = True
     )
     async def add(self, ctx, user : Optional[discord.Member] = None, amount = 0):
-        """Adds a coin amount to a given user or themself
-
-        Args:
-            ctx (_type_): Context from Discord.Py
-            user (Optional[discord.Member], optional): The user to add coins to. Defaults to None.
-            amount (int, optional): The amount of coins to add. Defaults to 0.
-        """
-
         user = user or ctx.author
 
         self.datastore.change(str(user.id), "coins_wallet", amount, "+")

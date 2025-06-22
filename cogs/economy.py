@@ -12,13 +12,6 @@ class Economy(commands.Cog):
         help="Displays your or another user's wallet and bank balance."
     )
     async def bal(self, ctx, user : Optional[discord.Member] = commands.parameter(default=None, description="Optional - the user to check the balance of.")):
-        """Checks the balance of a user
-
-        Args:
-            ctx (_type_): Context from Discord.Py
-            user (Optional[discord.Member], optional): The user to check the balance of, optional to check your own if no user provided. Defaults to None.
-        """
-
         user = user or ctx.author
 
         wallet : int = self.datastore.fetch(str(user.id), "coins_wallet") or 0
@@ -27,6 +20,25 @@ class Economy(commands.Cog):
         embed = discord.Embed(
             title = f"{user}'s Balance",
             description = f"{self.emojis["wallet"]} Wallet: {self.emojis["coin"]} **{wallet}**\n\n{self.emojis["bank"]} Bank: {self.emojis["coin"]} **{bank}**",
+            colour=0xf5d400
+        )
+
+        await ctx.reply(embed=embed)
+
+    @commands.command(
+        help="Shows the global leaderboard."
+    )
+    async def leaderboard(self, ctx):
+        data : dict = self.datastore.fetchAll()
+
+        output : str = ""
+        for userId, userData in data.items():
+            total : int = int(userData["coins_wallet"]) + int(userData["coins_bank"])
+            output += f"<@{userId}> :  {self.emojis["coin"]} **{total}**\n"
+        
+        embed = discord.Embed(
+            title = f"Global Leaderboard",
+            description = output,
             colour=0xf5d400
         )
 

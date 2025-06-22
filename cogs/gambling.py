@@ -10,20 +10,9 @@ class Gambling(commands.Cog):
         self.emojis = emojis
 
     @commands.command(
-        help="Bet any amount on a dice roll, 1-6 odds, win 6x your bet."
+        help = "Bet any amount on a dice roll, 1-6 odds, win 6x your bet."
     )
     async def dice(self, ctx, bet : int = commands.parameter(description="The amount to bet."), guess : int = commands.parameter(description="The number to bet on.")):
-        """Dice roll gamble that pays 6:1
-
-        Args:
-            ctx (_type_): Context from Discord.Py
-            bet (int): The amount of coins to bet
-            guess (int): The dice number to bet it on
-
-        Raises:
-            commands.CheckFailure: Error handling for not enough coins
-        """
-
         if guess < 1 or guess > 6:
             raise commands.BadArgument
         
@@ -57,21 +46,10 @@ class Gambling(commands.Cog):
         await message.edit(embed=endEmbed)
     
     @commands.command(
-        help="Bet any amount on multiple options with different payouts.",
-        aliases=["rl"]
+        help = "Bet any amount on multiple options with different payouts.",
+        aliases = ["rl"]
     )
-    async def roulette(self, ctx, bet : int = commands.parameter(description="The amount to bet."), option : str = commands.parameter(description=":\n\t\todds 2:1\n\t\tevens 2:1\n\t\tred 2:1\n\t\tblack 2:1\n\t\tnumber : 35:1")):
-        """Classic roulette, bet coins on any normal roulette option
-
-        Args:
-            ctx (_type_): Context from Discord.Py
-            bet (int): The amount of coins to bet
-            option (_type_, optional): The option to bet on.
-
-        Raises:
-            commands.CheckFailure: _description_
-        """
-
+    async def roulette(self, ctx, bet : int = commands.parameter(description="The amount to bet."), option : str = commands.parameter(description=":\n\t\todds 2:1\n\t\tevens 2:1\n\t\tred 2:1\n\t\tblack 2:1\n\t\t<number> 35:1")):
         if option not in ["odds", "evens", "red", "black"]:
             if not option.isdigit() or not (0 <= int(option) <= 36):
                 raise commands.BadArgument("Invalid roulette option.")
@@ -108,7 +86,7 @@ class Gambling(commands.Cog):
 
         startEmbed = discord.Embed(
             title=f"{ctx.author}'s Roulette spin",
-            description=":dart:ㅤ**Rolling...**ㅤ:dart:",
+            description=f"{self.emojis["wheel"]}ㅤ**Rolling...**ㅤ{self.emojis["wheel"]}",
             colour=0x00b0f4
         )
 
@@ -118,8 +96,8 @@ class Gambling(commands.Cog):
             colour=0x38ff4f if payout > 0 else 0xff3838
         )
         
-        message = await ctx.reply(embed=startEmbed)
+        message = await ctx.reply(embed = startEmbed)
 
         await asyncio.sleep(3)
 
-        await message.edit(embed=endEmbed)
+        await message.edit(embed = endEmbed)
