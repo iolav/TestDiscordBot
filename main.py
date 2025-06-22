@@ -31,11 +31,11 @@ client = commands.Bot(
 async def on_ready():
     datastore = Datastore("savedata.json")
 
-    emojis : Final[dict[str]] = {
+    emojis : Final[dict] = {
         "coin" : "<a:goldcoin:1328517822497685535>",
         "wallet" : "<:wallet:1328163268522410095>",
         "bank" : "<:bank2:1328163595434987551>",
-        "wheel" : "<a:roulettewheel:1386230490872152136>"
+        "wheel" : "<a:roulettewheel:1386230490872152136>",
     }
 
     await client.add_cog(Economy(datastore, emojis))
@@ -71,10 +71,10 @@ async def rouletteError(self, ctx, error):
         await ctx.reply("Your requested deposit amount is greater than your wallet balance!")
     elif isinstance(error, commands.BadArgument):
         await ctx.reply("The deposit amount must be greater than 0, use $help for assistance.")
-@Economy.claim.error
+@Economy.daily.error
 async def rouletteError(self, ctx, error):
     if isinstance(error, commands.CheckFailure):
-        await ctx.reply("You've already claimed your bonus in the last 24 hours!")
+        await ctx.reply("You've already claimed your bonus in the last 12 hours!")
 
 @Admin.add.error
 async def addError(self, ctx, error):

@@ -34,10 +34,21 @@ class Economy(commands.Cog):
     async def leaderboard(self, ctx):
         data : dict = self.datastore.fetchAll()
 
+        curPlace : int = 1
         output : str = ""
         for userId, userData in data.items():
+            rankEmoji : str = ""
+            if curPlace == 1:
+                rankEmoji = ":medal: "
+            elif curPlace == 2:
+                rankEmoji = ":second_place: "
+            elif curPlace == 3:
+                rankEmoji = ":third_place: "
+
             total : int = int(userData["coins_wallet"]) + int(userData["coins_bank"])
-            output += f"<@{userId}> :  {self.emojis["coin"]} **{total}**\n"
+            output += f"{rankEmoji}<@{userId}> :  {self.emojis["coin"]} **{total}**\n"
+
+            curPlace += 1
         
         embed = discord.Embed(
             title = "Global Leaderboard",
@@ -82,7 +93,7 @@ class Economy(commands.Cog):
         await ctx.reply(f"Successfully deposited {self.emojis["coin"]} **{amount}**") 
 
     @commands.command(
-        help="Claims your daily coin bonus."
+        help="Claims your daily coin bonus. Avalible every 12 hours."
     )
     async def daily(self, ctx):
         lastTimeStr : str = self.datastore.fetch(str(ctx.author.id), "last_daily")
@@ -91,10 +102,10 @@ class Economy(commands.Cog):
         if lastTimeStr:
             lastTime = datetime.fromisoformat(lastTimeStr)
 
-            if timeNow - lastTime < timedelta(hours = 24):
+            if timeNow - lastTime < timedelta(hours = 12):
                 raise commands.CheckFailure
             
         self.datastore.change(str(ctx.author.id), "last_daily", timeNow.isoformat(), "=")
         self.datastore.change(str(ctx.author.id), "coins_wallet", 100, "+")
 
-        await ctx.reply(f"Successfully claimed {self.emojis["coin"]} **100** daily bonus.") 
+        await ctx.reply(f"Successfully claimed {self.emojis["coin"]} **100** daily bonus.")

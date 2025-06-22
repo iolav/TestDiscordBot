@@ -3,11 +3,88 @@ from discord.ext import commands
 
 import asyncio
 import random
+import json
+
+class Blackjack(discord.ui.View):
+    def __init__(self, embed, emojis):
+        super().__init__(timeout = None)
+
+        self.embed = embed
+        self.emojis = emojis
+        
+        self.deck = list(self.emojis.keys()) * 2
+
+        self.plrHand = []
+        self.dealerHand = []
+        for _ in range(2):
+            self.plrHand.append(self.getRandCard())
+            self.dealerHand.append(self.getRandCard())
+
+    def getRandCard(self):
+        card = random.choice(self.deck)
+
+        self.deck.remove(card)
+        
+        return card
+    
+    def getScore(self, hand):
+        score : int = 0
+
+        for card in hand:
+            value, suit = card.split("_")
+
+            if value == "king" or value == "queen" or value == "jack":
+                score += 10
+            elif value == "ace":
+                score += 11
+            else:
+                score += int(value)
+
+        return score
+
+    def getHand(self, hand):
+        output : str = "ㅤ" if hand == self.dealerHand else ""
+
+        for card in hand:
+            output += self.emojis[card]
+
+        return output
+
+    @discord.ui.button(label = "Hit", style = discord.ButtonStyle.blurple)
+    async def hit(self, interaction : discord.Interaction, button):
+        self.plrHand.append(self.getRandCard())
+
+        score : int = self.getScore(self.plrHand)
+
+        if score > 21:
+            button.disabled = True
+
+            self.embed.add_field(name = "Bust! You lose.",
+                        value = "",
+                        inline = False)
+
+        self.embed.set_field_at(0,
+                        name = "Your hand",
+                        value = self.getHand(self.plrHand),
+                        inline = True)
+        self.embed.set_field_at(2,
+                        name = "",
+                        value = f"Your score: {score}ㅤㅤDealer's score: {self.getScore(self.dealerHand)}",
+                        inline = False)
+
+        await interaction.response.edit_message(embed = self.embed, view = self)
+
+    @discord.ui.button(label = "Stand", style = discord.ButtonStyle.green)
+    async def stand(self, interaction : discord.Interaction, button):
+        pass
 
 class Gambling(commands.Cog):
     def __init__(self, datastore, emojis : dict[str]):
         self.datastore = datastore
         self.emojis = emojis
+
+        with open("cards.json", "r") as file:
+            self.cardEmojis = json.load(file)
 
     @commands.command(
         help = "Bet any amount on a dice roll, 1-6 odds, win 6x your bet."
@@ -101,3 +178,26 @@ class Gambling(commands.Cog):
         await asyncio.sleep(3)
 
         await message.edit(embed = endEmbed)
+
+    @commands.command(
+        help = "Play a blackjack game against a computer dealer. 2 decks, dealer must stand on a 17 and draw to 16, and blackjack pays 3:2.",
+        aliases = ["bj"]
+    )
+    async def blackjack(self, ctx):
+        embed = discord.Embed()
+        embed.set_author(name = f"{ctx.author}'s Blackjack game")
+
+        game = Blackjack(embed, self.cardEmojis)
+
+        embed.add_field(name = "Your hand",
+                        value = game.getHand(game.plrHand),
+                        inline = True)
+        embed.add_field(name = "ㅤDealer's hand",
+                        value = game.getHand(game.dealerHand),
+                        inline = True)
+        embed.add_field(name = "",
+                        value = f"Your score: {game.getScore(game.plrHand)}ㅤㅤDealer's score: {game.getScore(game.dealerHand)}",
+                        inline = False)
+        embed.colour = 0x00b0f4
+
+        await ctx.reply(embed = embed, view = game)
