@@ -4,21 +4,33 @@ from discord.ext import commands
 import asyncio
 import random
 import json
+import math
 
 class Blackjack(discord.ui.View):
-    def __init__(self, embed, emojis):
+    def __init__(self, embed, emojis, cardEmojis, bet, datastore, authorId):
         super().__init__(timeout = None)
 
         self.embed = embed
         self.emojis = emojis
+        self.cardEmojis = cardEmojis
+        self.bet = bet
+        self.datastore = datastore
+        self.authorId = authorId
         
-        self.deck = list(self.emojis.keys()) * 2
+        self.deck = list(self.cardEmojis.keys()) * 2
 
         self.plrHand = []
         self.dealerHand = []
         for _ in range(2):
             self.plrHand.append(self.getRandCard())
-            self.dealerHand.append(self.getRandCard())
+
+        self.dealerHand.append(self.getRandCard())
+
+        if self.getScore(self.plrHand) == 21:
+            for child in self.children:
+                child.disabled = True
+                
+            self.datastore.change(str(self.authorId), "coins_wallet", math.floor(self.bet * 2.5), "+")
 
     def getRandCard(self):
         card = random.choice(self.deck)
@@ -46,18 +58,35 @@ class Blackjack(discord.ui.View):
         output : str = "ㅤ" if hand == self.dealerHand else ""
 
         for card in hand:
-            output += self.emojis[card]
+            output += self.cardEmojis[card]
+
+        if hand == self.dealerHand and len(hand) == 1:
+            output += self.emojis["card_back"]
 
         return output
+    
+    def playDealer(self):
+        while self.getScore(self.dealerHand) < 17:
+            self.dealerHand.append(self.getRandCard())
+
+        self.embed.set_field_at(1,
+                        name = "ㅤDealer's hand",
+                        value = self.getHand(self.dealerHand),
+                        inline = True)
+        self.embed.set_field_at(2,
+                        name = "",
+                        value = f"Value: **{self.getScore(self.plrHand)}**ㅤㅤValue: **{self.getScore(self.dealerHand)}**",
+                        inline = False)
+        
 
     @discord.ui.button(label = "Hit", style = discord.ButtonStyle.blurple)
     async def hit(self, interaction : discord.Interaction, button):
         self.plrHand.append(self.getRandCard())
 
         score : int = self.getScore(self.plrHand)
-
         if score > 21:
-            button.disabled = True
+            for child in self.children:
+                child.disabled = True
 
             self.embed.add_field(name = "Bust! You lose.",
                         value = "",
@@ -69,14 +98,38 @@ class Blackjack(discord.ui.View):
                         inline = True)
         self.embed.set_field_at(2,
                         name = "",
-                        value = f"Your score: {score}ㅤㅤDealer's score: {self.getScore(self.dealerHand)}",
+                        value = f"Value: {score}ㅤㅤValue: {self.getScore(self.dealerHand)}",
                         inline = False)
 
         await interaction.response.edit_message(embed = self.embed, view = self)
 
     @discord.ui.button(label = "Stand", style = discord.ButtonStyle.green)
     async def stand(self, interaction : discord.Interaction, button):
-        pass
+        for child in self.children:
+                child.disabled = True
+
+        self.playDealer()
+
+        plrScore : int = self.getScore(self.plrHand)
+        dealerScore : int = self.getScore(self.dealerHand)
+        if plrScore > dealerScore or dealerScore > 21:
+            self.datastore.change(str(self.authorId), "coins_wallet", self.bet * 2, "+")
+
+            self.embed.add_field(name = "You win!",
+                            value = "",
+                            inline = False)
+        elif dealerScore > plrScore:
+            self.embed.add_field(name = "Dealer wins, you lose!",
+                            value = "",
+                            inline = False)
+        else:
+            self.datastore.change(str(self.authorId), "coins_wallet", self.bet, "+")
+
+            self.embed.add_field(name = "Score tied, push.",
+                            value = "",
+                            inline = False)
+        
+        await interaction.response.edit_message(embed = self.embed, view = self)
 
 class Gambling(commands.Cog):
     def __init__(self, datastore, emojis : dict[str]):
@@ -90,12 +143,15 @@ class Gambling(commands.Cog):
         help = "Bet any amount on a dice roll, 1-6 odds, win 6x your bet."
     )
     async def dice(self, ctx, bet : int = commands.parameter(description="The amount to bet."), guess : int = commands.parameter(description="The number to bet on.")):
+        if bet < 1:
+            raise commands.BadArgument("The bet amount must be greater than 0, use $help for assistance.")
+        
         if guess < 1 or guess > 6:
-            raise commands.BadArgument
+            raise commands.BadArgument("The dice number must be between 1 and 6, use $help for assistance.")
         
         wallet : int = self.datastore.fetch(str(ctx.author.id), "coins_wallet") or 0
         if wallet < bet:
-            raise commands.CheckFailure
+            raise commands.CheckFailure("Your bet is bigger than your wallet balance!")
 
         roll : int = random.randint(1, 6)
         won : bool = roll == guess
@@ -127,13 +183,19 @@ class Gambling(commands.Cog):
         aliases = ["rl"]
     )
     async def roulette(self, ctx, bet : int = commands.parameter(description="The amount to bet."), option : str = commands.parameter(description=":\n\t\todds 2:1\n\t\tevens 2:1\n\t\tred 2:1\n\t\tblack 2:1\n\t\t<number> 35:1")):
-        if option not in ["odds", "evens", "red", "black"]:
-            if not option.isdigit() or not (0 <= int(option) <= 36):
-                raise commands.BadArgument("Invalid roulette option.")
+        if bet < 1:
+            raise commands.BadArgument("The bet amount must be greater than 0, use $help for assistance.")
+
+        if option in ["odds", "evens", "red", "black"]:
+            pass
+        elif option.isdigit() and 0 <= int(option) <= 36:
+            pass
+        else:
+            raise commands.BadArgument("No valid roulette option found, use $help for assistance.")
         
         wallet : int = self.datastore.fetch(str(ctx.author.id), "coins_wallet") or 0
         if wallet < bet:
-            raise commands.CheckFailure
+            raise commands.CheckFailure("Your bet is bigger than your wallet balance!")
 
         roll : int = random.randint(0, 36)
         
@@ -180,14 +242,23 @@ class Gambling(commands.Cog):
         await message.edit(embed = endEmbed)
 
     @commands.command(
-        help = "Play a blackjack game against a computer dealer. 2 decks, dealer must stand on a 17 and draw to 16, and blackjack pays 3:2.",
+        help = "Play a blackjack game against a computer dealer.\n\n2 decks\nDealer must stand on a 17 and draw to 16\nBlackjack pays 3:2.",
         aliases = ["bj"]
     )
-    async def blackjack(self, ctx):
+    async def blackjack(self, ctx, bet : int = commands.parameter(description="The amount to bet.")):
+        if bet < 1:
+            raise commands.BadArgument("The bet amount must be greater than 0, use $help for assistance.")
+        
+        wallet : int = self.datastore.fetch(str(ctx.author.id), "coins_wallet") or 0
+        if wallet < bet:
+            raise commands.CheckFailure("Your bet is bigger than your wallet balance!")
+        
+        self.datastore.change(str(ctx.author.id), "coins_wallet", bet, "-")
+        
         embed = discord.Embed()
         embed.set_author(name = f"{ctx.author}'s Blackjack game")
 
-        game = Blackjack(embed, self.cardEmojis)
+        game = Blackjack(embed, self.emojis, self.cardEmojis, bet, self.datastore, ctx.author.id)
 
         embed.add_field(name = "Your hand",
                         value = game.getHand(game.plrHand),
@@ -196,8 +267,13 @@ class Gambling(commands.Cog):
                         value = game.getHand(game.dealerHand),
                         inline = True)
         embed.add_field(name = "",
-                        value = f"Your score: {game.getScore(game.plrHand)}ㅤㅤDealer's score: {game.getScore(game.dealerHand)}",
+                        value = f"Value: {game.getScore(game.plrHand)}ㅤㅤValue: {game.getScore(game.dealerHand)}",
                         inline = False)
         embed.colour = 0x00b0f4
+
+        if game.getScore(game.plrHand) == 21:
+            embed.add_field(name = "Blackjack, you win!",
+                                value = "",
+                                inline = False)
 
         await ctx.reply(embed = embed, view = game)

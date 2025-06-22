@@ -64,11 +64,11 @@ class Economy(commands.Cog):
     )
     async def withdraw(self, ctx, amount : int = commands.parameter(description="The amount to withdraw.")):
         if amount < 1:
-            raise commands.BadArgument
+            raise commands.BadArgument("The withdraw amount must be greater than 0, use $help for assistance.")
 
         bank : int = self.datastore.fetch(str(ctx.author.id), "coins_bank") or 0
         if amount > bank:
-            raise commands.CheckFailure
+            raise commands.CheckFailure("Your requested withdraw amount is greater than your bank balance!")
         
         self.datastore.change(str(ctx.author.id), "coins_bank", amount, "-")
         self.datastore.change(str(ctx.author.id), "coins_wallet", amount, "+")
@@ -81,11 +81,11 @@ class Economy(commands.Cog):
     )
     async def deposit(self, ctx, amount : int = commands.parameter(description="The amount to deposit.")):
         if amount < 1:
-            raise commands.BadArgument
+            raise commands.BadArgument("The deposit amount must be greater than 0, use $help for assistance.")
 
         wallet : int = self.datastore.fetch(str(ctx.author.id), "coins_wallet") or 0
         if amount > wallet:
-            raise commands.CheckFailure
+            raise commands.CheckFailure("Your requested deposit amount is greater than your wallet balance!")
         
         self.datastore.change(str(ctx.author.id), "coins_wallet", amount, "-")
         self.datastore.change(str(ctx.author.id), "coins_bank", amount, "+")
@@ -103,7 +103,7 @@ class Economy(commands.Cog):
             lastTime = datetime.fromisoformat(lastTimeStr)
 
             if timeNow - lastTime < timedelta(hours = 12):
-                raise commands.CheckFailure
+                raise commands.CheckFailure("You've already claimed your bonus in the last 12 hours!")
             
         self.datastore.change(str(ctx.author.id), "last_daily", timeNow.isoformat(), "=")
         self.datastore.change(str(ctx.author.id), "coins_wallet", 100, "+")
