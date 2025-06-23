@@ -40,17 +40,23 @@ class Blackjack(discord.ui.View):
         return card
     
     def getScore(self, hand):
-        score : int = 0
+        score = 0
+        aceCount = 0
 
         for card in hand:
             value, suit = card.split("_")
 
-            if value == "king" or value == "queen" or value == "jack":
+            if value in ["king", "queen", "jack"]:
                 score += 10
             elif value == "ace":
                 score += 11
+                aceCount += 1
             else:
                 score += int(value)
+
+        while score > 21 and aceCount > 0:
+            score -= 10
+            aceCount -= 1
 
         return score
 
@@ -91,6 +97,7 @@ class Blackjack(discord.ui.View):
             self.embed.add_field(name = "Bust! You lose.",
                         value = "",
                         inline = False)
+            self.embed.colour = 0xff3838
 
         self.embed.set_field_at(0,
                         name = "Your hand",
@@ -115,13 +122,15 @@ class Blackjack(discord.ui.View):
         if plrScore > dealerScore or dealerScore > 21:
             self.datastore.change(str(self.authorId), "coins_wallet", self.bet * 2, "+")
 
-            self.embed.add_field(name = "You win!",
+            self.embed.add_field(name = "Dealer busts, you win!" if dealerScore > 21 else f"{plrScore} beats {dealerScore}, you win!",
                             value = "",
                             inline = False)
+            self.embed.colour = 0x38ff4f
         elif dealerScore > plrScore:
-            self.embed.add_field(name = "Dealer wins, you lose!",
+            self.embed.add_field(name = f"{dealerScore} beats {plrScore}, you lose.",
                             value = "",
                             inline = False)
+            self.embed.colour = 0xff3838
         else:
             self.datastore.change(str(self.authorId), "coins_wallet", self.bet, "+")
 
@@ -275,5 +284,6 @@ class Gambling(commands.Cog):
             embed.add_field(name = "Blackjack, you win!",
                                 value = "",
                                 inline = False)
+            self.embed.colour = 0x38ff4f
 
         await ctx.reply(embed = embed, view = game)

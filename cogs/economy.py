@@ -34,17 +34,24 @@ class Economy(commands.Cog):
     async def leaderboard(self, ctx):
         data : dict = self.datastore.fetchAll()
 
+        sortedData = sorted(
+            data.items(),
+            key=lambda item: int(item[1]["coins_wallet"]) + int(item[1]["coins_bank"]),
+            reverse=True
+        )
+
         curPlace : int = 1
         output : str = ""
-        for userId, userData in data.items():
+        for userId, userData in sortedData:
             rankEmoji : str = ""
-            if curPlace == 1:
-                rankEmoji = ":medal: "
-            elif curPlace == 2:
-                rankEmoji = ":second_place: "
-            elif curPlace == 3:
-                rankEmoji = ":third_place: "
-
+            match curPlace:
+                case 1:
+                    rankEmoji = ":medal: "
+                case 2:
+                    rankEmoji = ":second_place: "
+                case 3:
+                    rankEmoji = ":third_place: "
+                
             total : int = int(userData["coins_wallet"]) + int(userData["coins_bank"])
             output += f"{rankEmoji}<@{userId}> :  {self.emojis["coin"]} **{total}**\n"
 
