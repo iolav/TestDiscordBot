@@ -4,6 +4,7 @@ from discord.ext import commands
 from typing import Optional
 
 from datetime import datetime, timedelta
+import random
 
 class Economy(commands.Cog):
     def __init__(self, datastore, emojis):
@@ -110,9 +111,34 @@ class Economy(commands.Cog):
             lastTime = datetime.fromisoformat(lastTimeStr)
 
             if timeNow - lastTime < timedelta(hours = 12):
-                raise commands.CheckFailure("You've already claimed your bonus in the last 12 hours!")
+                hours, remainder = divmod(int((timedelta(hours = 12) - (timeNow - lastTime)).total_seconds()), 3600)
+                minutes, seconds = divmod(remainder, 60)
+
+                raise commands.CheckFailure(f"You've already claimed your bonus in the last *12 hours*! You have **{hours}:{minutes:02}:{seconds:02}** left.")
             
         self.datastore.change(str(ctx.author.id), "last_daily", timeNow.isoformat(), "=")
-        self.datastore.change(str(ctx.author.id), "coins_wallet", 100, "+")
+        self.datastore.change(str(ctx.author.id), "coins_wallet", 1000, "+")
 
-        await ctx.reply(f"Successfully claimed {self.emojis["coin"]} **100** daily bonus.")
+        await ctx.reply(f"Successfully claimed {self.emojis["coin"]} **1000** daily bonus.")
+
+    @commands.command(
+        help="Gives you a random amount of money, usable every 5 minutes."
+    )
+    async def work(self, ctx):
+        lastTimeStr : str = self.datastore.fetch(str(ctx.author.id), "last_work")
+        timeNow : datetime = datetime.now()
+
+        if lastTimeStr:
+            lastTime = datetime.fromisoformat(lastTimeStr)
+
+            if timeNow - lastTime < timedelta(minutes = 5):
+                minutes, seconds = divmod(int((timedelta(minutes = 5) - (timeNow - lastTime)).total_seconds()), 60)
+
+                raise commands.CheckFailure(f"You've already worked in the past *5 minutes*! You have **{minutes}:{seconds:02}** left.")
+            
+        amount : int = random.randint(50, 150)
+            
+        self.datastore.change(str(ctx.author.id), "last_work", timeNow.isoformat(), "=")
+        self.datastore.change(str(ctx.author.id), "coins_wallet", amount, "+")
+
+        await ctx.reply(f"You made {self.emojis["coin"]} **{amount}**")

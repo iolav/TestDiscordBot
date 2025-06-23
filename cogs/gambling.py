@@ -87,6 +87,8 @@ class Blackjack(discord.ui.View):
 
     @discord.ui.button(label = "Hit", style = discord.ButtonStyle.blurple)
     async def hit(self, interaction : discord.Interaction, button):
+        if interaction.user.id != self.authorId: return
+
         self.plrHand.append(self.getRandCard())
 
         score : int = self.getScore(self.plrHand)
@@ -112,6 +114,8 @@ class Blackjack(discord.ui.View):
 
     @discord.ui.button(label = "Stand", style = discord.ButtonStyle.green)
     async def stand(self, interaction : discord.Interaction, button):
+        if interaction.user.id != self.authorId: return
+        
         for child in self.children:
                 child.disabled = True
 
@@ -220,7 +224,7 @@ class Gambling(commands.Cog):
 
         if ((option == "evens" or option == "black") and roll % 2 == 0) or ((option == "odds" or option == "red") and roll % 2 == 1):
             payout = 2
-        elif int(option) == roll:
+        elif option.isdigit() and int(option) == roll:
             payout = 35
 
         if payout != 35 and roll == 0:
