@@ -5,11 +5,15 @@ from typing import Optional
 
 from datetime import datetime, timedelta
 import random
+import json
 
 class Economy(commands.Cog):
     def __init__(self, datastore, emojis):
         self.datastore = datastore
         self.emojis = emojis
+
+        with open("workphrases.json", "r") as file:
+            self.workPhrases = json.load(file)
 
     @commands.command(
         help="Displays your or another user's wallet and bank balance."
@@ -54,7 +58,7 @@ class Economy(commands.Cog):
                     rankEmoji = ":third_place: "
                 
             total : int = int(userData["coins_wallet"]) + int(userData["coins_bank"])
-            output += f"{rankEmoji}<@{userId}> :  {self.emojis["coin"]} **{total}**\n"
+            output += f"{rankEmoji}<@{userId}> **:**  {self.emojis["coin"]} **{total}**\n"
 
             curPlace += 1
         
@@ -101,7 +105,7 @@ class Economy(commands.Cog):
         await ctx.reply(f"Successfully deposited {self.emojis["coin"]} **{amount}**") 
 
     @commands.command(
-        help="Claims your daily coin bonus. Avalible every 12 hours."
+        help="Claims your daily coin bonus, usable every 12 hours."
     )
     async def daily(self, ctx):
         lastTimeStr : str = self.datastore.fetch(str(ctx.author.id), "last_daily")
@@ -136,9 +140,11 @@ class Economy(commands.Cog):
 
                 raise commands.CheckFailure(f"You've already worked in the past *5 minutes*! You have **{minutes}:{seconds:02}** left.")
             
-        amount : int = random.randint(50, 150)
+        amount : int = random.randint(100, 200)
             
         self.datastore.change(str(ctx.author.id), "last_work", timeNow.isoformat(), "=")
         self.datastore.change(str(ctx.author.id), "coins_wallet", amount, "+")
 
-        await ctx.reply(f"You made {self.emojis["coin"]} **{amount}**")
+        message: str = random.choice(list(self.workPhrases.values())).format(f"{self.emojis["coin"]} **{amount}**")
+
+        await ctx.reply(message)

@@ -11,10 +11,11 @@ from datastore import Datastore
 from cogs.economy import Economy
 from cogs.gambling import Gambling
 from cogs.admin import Admin
+from cogs.fun import Fun
 
 load_dotenv()
 
-TOKEN : Final = os.getenv("TOKEN")
+TOKEN : Final[str] = os.getenv("TOKEN") or ""
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -42,6 +43,7 @@ async def on_ready():
     await client.add_cog(Economy(datastore, emojis))
     await client.add_cog(Gambling(datastore, emojis))
     await client.add_cog(Admin(datastore, emojis))
+    await client.add_cog(Fun(datastore, emojis))
 
 @client.event
 async def on_command_error(ctx, error):

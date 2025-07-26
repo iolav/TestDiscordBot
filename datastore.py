@@ -34,7 +34,7 @@ class Datastore:
             self.data[user] = DEFAULT_USER_DATA.copy()
             self.save()
 
-    def fetch(self, user : int, key : str):
+    def fetch(self, user : str, key : str):
         self.steralize_user(user)
 
         try:

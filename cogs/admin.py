@@ -3,7 +3,6 @@ from discord.ext import commands
 
 from typing import Optional
 
-@commands.is_owner()
 class Admin(commands.Cog):
     def __init__(self, datastore, emojis):
         self.datastore = datastore
@@ -13,6 +12,7 @@ class Admin(commands.Cog):
         help = "Adds a coin amount to a user",
         hidden = True
     )
+    @commands.is_owner()
     async def add(self, ctx, user : Optional[discord.Member] = None, amount = 0):
         user = user or ctx.author
 
